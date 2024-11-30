@@ -48,23 +48,25 @@ namespace ImGuiKnobs {
                 // Handle dragging
                 ImGui::InvisibleButton(_label, {radius * 2.0f, radius * 2.0f});
 
-                // Handle drag: if DragVertical or DragHorizontal flags are set, only the given direction is
-                // used, otherwise use the drag direction with the highest delta
-                ImGuiIO &io = ImGui::GetIO();
-                bool drag_vertical =
-                        !(flags & ImGuiKnobFlags_DragHorizontal) &&
-                        (flags & ImGuiKnobFlags_DragVertical || ImAbs(io.MouseDelta[ImGuiAxis_Y]) > ImAbs(io.MouseDelta[ImGuiAxis_X]));
+                if (!(flags & ImGuiKnobFlags_NoDrag)) {
+                    // Handle drag: if DragVertical or DragHorizontal flags are set, only the given direction is
+                    // used, otherwise use the drag direction with the highest delta
+                    ImGuiIO &io = ImGui::GetIO();
+                    bool drag_vertical =
+                            !(flags & ImGuiKnobFlags_DragHorizontal) &&
+                            (flags & ImGuiKnobFlags_DragVertical || ImAbs(io.MouseDelta[ImGuiAxis_Y]) > ImAbs(io.MouseDelta[ImGuiAxis_X]));
 
-                auto gid = ImGui::GetID(_label);
-                value_changed = ImGui::DragBehavior(
-                        gid,
-                        data_type,
-                        p_value,
-                        speed,
-                        &v_min,
-                        &v_max,
-                        format,
-                        drag_vertical ? ImGuiSliderFlags_Vertical : 0);
+                    auto gid = ImGui::GetID(_label);
+                    value_changed = ImGui::DragBehavior(
+                            gid,
+                            data_type,
+                            p_value,
+                            speed,
+                            &v_min,
+                            &v_max,
+                            format,
+                            drag_vertical ? ImGuiSliderFlags_Vertical : 0);
+                }
 
                 angle_min = _angle_min < 0 ? IMGUIKNOBS_PI * 0.75f : _angle_min;
                 angle_max = _angle_max < 0 ? IMGUIKNOBS_PI * 2.25f : _angle_max;
@@ -174,6 +176,14 @@ namespace ImGuiKnobs {
                 if (changed) {
                     k.value_changed = true;
                 }
+            } else if (flags & ImGuiKnobFlags_NoDrag) {
+                char buf[100] = {0};
+                snprintf(buf, 100, format, *p_value);
+                auto title_size = ImGui::CalcTextSize(buf, NULL, false, width);
+                // Center text
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
+                                     (width - title_size[0]) * 0.5f);
+                ImGui::Text(format, *p_value);
             }
 
             ImGui::EndGroup();
@@ -262,6 +272,16 @@ namespace ImGuiKnobs {
             }
             case ImGuiKnobVariant_WiperOnly: {
                 knob.draw_arc(0.8f, 0.41f, knob.angle_min, knob.angle_max, detail::GetTrackColorSet());
+
+                // TODO: put some ticks to mark critical levels
+                // auto angle = knob.angle_min + (knob.angle_max - knob.angle_min) * 0.1;
+                // knob.draw_tick(0.6f, 1.0f, 0.08f, angle, detail::GetPrimaryColorSet());
+                // angle = knob.angle_min + (knob.angle_max - knob.angle_min) * 0.2;
+                // knob.draw_tick(0.6f, 1.0f, 0.08f, angle, detail::GetPrimaryColorSet());
+                // angle = knob.angle_min + (knob.angle_max - knob.angle_min) * 0.8;
+                // knob.draw_tick(0.6f, 1.0f, 0.08f, angle, detail::GetPrimaryColorSet());
+                // angle = knob.angle_min + (knob.angle_max - knob.angle_min) * 0.9;
+                // knob.draw_tick(0.6f, 1.0f, 0.08f, angle, detail::GetPrimaryColorSet());
 
                 if (knob.t > 0.01) {
                     knob.draw_arc(0.8f, 0.43f, knob.angle_min, knob.angle, detail::GetPrimaryColorSet());
